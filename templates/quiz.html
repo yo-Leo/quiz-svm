@@ -49,33 +49,6 @@
             display: block;
         }
 
-        .area-atual {
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #f7f8fa;
-            border-radius: 5px;
-        }
-
-        .area-atual label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .area-atual select {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        .area-atual small {
-            display: block;
-            margin-top: 6px;
-            color: #777;
-        }
-
         .pergunta {
             margin-bottom: 25px;
             padding-bottom: 20px;
@@ -171,33 +144,6 @@
             name="usuario_id"
             value="{{ usuario_id }}"
         >
-
-        <div class="area-atual">
-
-            <label for="area_ti_atual">
-                Área de TI atual (opcional)
-            </label>
-
-            <select name="area_ti_atual" id="area_ti_atual">
-                <option value="" {% if not area_atual %}selected{% endif %}>
-                    Prefiro não informar
-                </option>
-                {% for area in areas %}
-                <option
-                    value="{{ area }}"
-                    {% if area_atual == area %}selected{% endif %}
-                >
-                    {{ area }}
-                </option>
-                {% endfor %}
-            </select>
-
-            <small>
-                Caso você já atue ou estude em uma área de TI, informe
-                acima. Esse dado é usado apenas para treinar o modelo.
-            </small>
-
-        </div>
 
         {% for afirmacao in afirmacoes %}
 

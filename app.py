@@ -62,16 +62,6 @@ ESCALA_LIKERT = [
 
 VALORES_LIKERT_VALIDOS = {str(valor) for valor, _ in ESCALA_LIKERT}
 
-# Áreas de TI padronizadas, usadas como target (y) do modelo SVM.
-AREAS_TI = [
-    "Front-end",
-    "Back-end",
-    "DevOps / Infraestrutura",
-    "Dados / Data Science",
-    "Inteligência Artificial",
-    "Segurança da Informação",
-]
-
 
 def conectar_banco():
     return sqlite3.connect("quiz.db")
@@ -92,8 +82,7 @@ def criar_banco():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             id_usuario TEXT UNIQUE NOT NULL,
             data_hora TEXT NOT NULL,
-            {colunas_q},
-            area_ti_atual TEXT
+            {colunas_q}
 
         )
     """)
@@ -135,10 +124,8 @@ def iniciar_quiz():
         "quiz.html",
         afirmacoes=AFIRMACOES,
         escala=ESCALA_LIKERT,
-        areas=AREAS_TI,
         usuario_id=usuario_id,
         respostas_atual={},
-        area_atual="",
         faltantes=[],
     )
 
@@ -147,10 +134,6 @@ def iniciar_quiz():
 def finalizar():
 
     usuario_id = request.form.get("usuario_id") or str(uuid.uuid4())
-    area_ti_atual = request.form.get("area_ti_atual", "").strip()
-
-    if area_ti_atual not in AREAS_TI:
-        area_ti_atual = None
 
     respostas, faltantes = validar_respostas(request.form)
 
@@ -159,10 +142,8 @@ def finalizar():
             "quiz.html",
             afirmacoes=AFIRMACOES,
             escala=ESCALA_LIKERT,
-            areas=AREAS_TI,
             usuario_id=usuario_id,
             respostas_atual=respostas,
-            area_atual=area_ti_atual or "",
             faltantes=faltantes,
         ), 400
 
@@ -180,11 +161,10 @@ def finalizar():
             INSERT INTO respostas (
                 id_usuario,
                 data_hora,
-                {colunas_q},
-                area_ti_atual
+                {colunas_q}
             )
-            VALUES (?, ?, {marcadores_q}, ?)
-        """, (usuario_id, data_hora, *valores_q, area_ti_atual))
+            VALUES (?, ?, {marcadores_q})
+        """, (usuario_id, data_hora, *valores_q))
 
         banco.commit()
     except sqlite3.IntegrityError:
@@ -201,7 +181,6 @@ def finalizar():
         afirmacoes=AFIRMACOES,
         escala=dict(ESCALA_LIKERT),
         respostas=respostas,
-        area_ti_atual=area_ti_atual,
     )
 
 
@@ -210,7 +189,7 @@ def relatorio():
 
     banco = conectar_banco()
 
-    colunas = ["id_usuario", "data_hora"] + [f"q{n}" for n in range(1, 11)] + ["area_ti_atual"]
+    colunas = ["id_usuario", "data_hora"] + [f"q{n}" for n in range(1, 11)]
 
     df = pd.read_sql_query(
         f"SELECT {', '.join(colunas)} FROM respostas ORDER BY id",
@@ -240,7 +219,7 @@ def relatorio():
 
         as_attachment=True,
 
-        download_name="relatorio_quiz_svm.xlsx",
+        download_name="dados_teste.xlsx",
 
         mimetype=(
             "application/vnd.openxmlformats-officedocument."
