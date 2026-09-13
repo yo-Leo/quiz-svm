@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Resultado</title>
+
+    <style>
+
+        body {
+
+            font-family: Arial;
+            background: #f2f2f2;
+            text-align: center;
+            padding-top: 100px;
+        }
+
+        .container {
+
+            background: white;
+            width: 450px;
+            margin: auto;
+            padding: 40px;
+            border-radius: 10px;
+        }
+
+        .resultado {
+
+            font-size: 40px;
+            font-weight: bold;
+            margin: 30px;
+        }
+
+        a {
+
+            display: block;
+            background: #2563eb;
+            color: white;
+            padding: 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <h1>
+        Quiz Finalizado!
+    </h1>
+
+
+    <p>
+
+        ID da tentativa:
+
+        <strong>
+            {{ usuario_id }}
+        </strong>
+
+    </p>
+
+
+    <div class="resultado">
+
+        {{ porcentagem }}%
+
+    </div>
+
+
+    <p>
+
+        Acertos:
+
+        <strong>
+            {{ acertos }}/{{ total }}
+        </strong>
+
+    </p>
+
+
+    <p>
+
+        Tempo:
+
+        <strong>
+            {{ tempo }} segundos
+        </strong>
+
+    </p>
+
+
+    <a href="/">
+
+        Voltar ao Menu
+
+    </a>
+
+
+</div>
+
+
+</body>
+
+</html>

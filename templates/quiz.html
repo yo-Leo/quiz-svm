@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Quiz SVM</title>
+
+    <style>
+
+        body {
+
+            font-family: Arial;
+            background: #f2f2f2;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .pergunta {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .opcao {
+            display: block;
+            padding: 10px;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+
+        .finalizar {
+            width: 100%;
+            padding: 15px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #tempo {
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <div class="topo">
+
+        <h1>Quiz SVM</h1>
+
+        <div>
+
+            Tempo:
+            <span id="tempo">
+                00:00
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <p>
+
+        ID da tentativa:
+
+        <strong>
+            {{ usuario_id }}
+        </strong>
+
+    </p>
+
+
+    <form
+        action="/finalizar"
+        method="POST"
+        id="quizForm"
+    >
+
+
+        <!-- ID -->
+
+        <input
+            type="hidden"
+            name="usuario_id"
+            value="{{ usuario_id }}"
+        >
+
+        <input
+            type="hidden"
+            name="tempo"
+            id="tempoInput"
+            value="0"
+        >
+
+        {% for pergunta in perguntas %}
+
+        <div class="pergunta">
+
+
+            <h2>
+
+                {{ pergunta.id }}.
+                {{ pergunta.pergunta }}
+
+            </h2>
+
+
+            {% for letra, texto in pergunta.opcoes.items() %}
+
+
+            <label class="opcao">
+
+                <input
+                    type="radio"
+                    name="q{{ pergunta.id }}"
+                    value="{{ letra }}"
+                    required
+                >
+
+                {{ letra }}) {{ texto }}
+
+            </label>
+
+
+            {% endfor %}
+
+
+        </div>
+
+        {% endfor %}
+
+
+        <button
+            type="submit"
+            class="finalizar"
+        >
+
+            Finalizar Quiz
+
+        </button>
+
+
+    </form>
+
+
+</div>
+
+
+<script>
+
+    let segundos = 0;
+
+
+    const tempo = document.getElementById(
+        "tempo"
+    );
+
+
+    const tempoInput = document.getElementById(
+        "tempoInput"
+    );
+
+
+    const formulario = document.getElementById(
+        "quizForm"
+    );
+
+
+    // Cronômetro
+
+    const contador = setInterval(
+        function() {
+
+            segundos++;
+
+
+            let minutos = Math.floor(
+                segundos / 60
+            );
+
+
+            let segundosRestantes =
+                segundos % 60;
+
+
+            tempo.innerText =
+
+                String(minutos)
+                    .padStart(2, "0")
+
+                +
+
+                ":"
+
+                +
+
+                String(segundosRestantes)
+                    .padStart(2, "0");
+
+
+            tempoInput.value =
+                segundos;
+
+
+        },
+
+        1000
+    );
+
+
+    // Antes de enviar
+
+    formulario.addEventListener(
+        "submit",
+        function() {
+
+            clearInterval(contador);
+
+            tempoInput.value =
+                segundos;
+
+        }
+    );
+
+</script>
+
+
+</body>
+
+</html>
