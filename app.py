@@ -7,155 +7,93 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-PERGUNTAS = [
+# As 10 afirmações do Questionário de Afinidade com Áreas de TI.
+AFIRMACOES = [
     {
         "id": 1,
-        "pergunta": "O que significa SVM?",
-        "opcoes": {
-            "A": "Simple Vector Machine",
-            "B": "Support Vector Machine",
-            "C": "Statistical Variable Model",
-            "D": "Supervised Variable Method"
-        },
-        "resposta": "B"
+        "texto": "Gosto de transformar uma ideia em uma experiência visual com a qual outras pessoas possam interagir."
     },
-
     {
         "id": 2,
-        "pergunta": "Qual é o principal objetivo de uma SVM em um problema de classificação?",
-        "opcoes": {
-            "A": "Encontrar a maior quantidade possível de dados",
-            "B": "Criar uma fronteira que separe diferentes classes",
-            "C": "Remover todos os dados duplicados",
-            "D": "Aumentar o tamanho do conjunto de dados"
-        },
-        "resposta": "B"
+        "texto": "Tenho interesse em entender como as diferentes partes de um sistema se comunicam e como suas regras internas funcionam."
     },
-
     {
         "id": 3,
-        "pergunta": "O que são os Support Vectors (vetores de suporte)?",
-        "opcoes": {
-            "A": "Os pontos mais próximos da fronteira de decisão",
-            "B": "Todos os pontos utilizados no treinamento",
-            "C": "Os dados que foram removidos durante o treinamento",
-            "D": "Os pontos mais distantes de todas as classes"
-        },
-        "resposta": "A"
+        "texto": "Gosto de analisar informações, identificar padrões e utilizar dados para chegar a conclusões."
     },
-
     {
         "id": 4,
-        "pergunta": "Em uma SVM linear, o que representa a hyperplane?",
-        "opcoes": {
-            "A": "Uma técnica para remover dados",
-            "B": "A fronteira utilizada para separar as classes",
-            "C": "O conjunto de dados de teste",
-            "D": "O resultado final da previsão"
-        },
-        "resposta": "B"
+        "texto": "Tenho interesse em automatizar tarefas repetitivas para tornar processos mais rápidos e confiáveis."
     },
-
     {
         "id": 5,
-        "pergunta": "Qual destes é um exemplo de classificação que poderia utilizar SVM?",
-        "opcoes": {
-            "A": "Classificar e-mails como spam ou não spam",
-            "B": "Somar dois números",
-            "C": "Ordenar uma lista de números",
-            "D": "Calcular a média de uma turma"
-        },
-        "resposta": "A"
+        "texto": "Gosto de investigar problemas em sistemas e descobrir a causa de comportamentos inesperados."
     },
-
     {
         "id": 6,
-        "pergunta": "Para que serve o train_test_split normalmente utilizado antes do treinamento de uma SVM?",
-        "opcoes": {
-            "A": "Dividir os dados em conjuntos de treinamento e teste",
-            "B": "Normalizar os dados",
-            "C": "Criar a hyperplane",
-            "D": "Escolher automaticamente o kernel"
-        },
-        "resposta": "A"
+        "texto": "Tenho interesse em compreender como sistemas podem identificar padrões e produzir resultados a partir de dados."
     },
-
     {
         "id": 7,
-        "pergunta": "Por que podemos utilizar StandardScaler antes de treinar uma SVM?",
-        "opcoes": {
-            "A": "Para transformar os dados em texto",
-            "B": "Para colocar as características em escalas comparáveis",
-            "C": "Para remover a variável alvo",
-            "D": "Para aumentar automaticamente a quantidade de dados"
-        },
-        "resposta": "B"
+        "texto": "Gosto de pensar em maneiras de proteger informações e sistemas contra acessos ou comportamentos não autorizados."
     },
-
     {
         "id": 8,
-        "pergunta": "Qual destes é um kernel disponível no SVC do Scikit-learn?",
-        "opcoes": {
-            "A": "rbf",
-            "B": "linearize",
-            "C": "vector",
-            "D": "classify"
-        },
-        "resposta": "A"
+        "texto": "Tenho interesse em trabalhar com ambientes, servidores e ferramentas que permitem que aplicações funcionem de maneira estável."
     },
-
     {
         "id": 9,
-        "pergunta": "O que o parâmetro C de uma SVM influencia?",
-        "opcoes": {
-            "A": "A quantidade de linhas do dataset",
-            "B": "O equilíbrio entre uma margem mais ampla e erros de classificação",
-            "C": "O número de classes obrigatoriamente",
-            "D": "O formato do arquivo Excel"
-        },
-        "resposta": "B"
+        "texto": "Gosto de organizar e interpretar informações para encontrar tendências, relações ou oportunidades de melhoria."
     },
-
     {
         "id": 10,
-        "pergunta": "O que acontece quando utilizamos uma SVM treinada para fazer uma previsão?",
-        "opcoes": {
-            "A": "O modelo recebe novos dados e determina a classe prevista",
-            "B": "O modelo apaga os dados utilizados no treinamento",
-            "C": "O modelo cria automaticamente um novo dataset",
-            "D": "O modelo necessariamente precisa ser treinado novamente para cada previsão"
-        },
-        "resposta": "A"
-    }
+        "texto": "Tenho interesse em desenvolver soluções considerando tanto o funcionamento interno do sistema quanto a forma como ele será utilizado pelas pessoas."
+    },
 ]
+
+# Escala Likert fixa de 5 pontos.
+ESCALA_LIKERT = [
+    (1, "Discordo Totalmente"),
+    (2, "Discordo"),
+    (3, "Neutro"),
+    (4, "Concordo"),
+    (5, "Concordo Totalmente"),
+]
+
+VALORES_LIKERT_VALIDOS = {str(valor) for valor, _ in ESCALA_LIKERT}
+
+# Áreas de TI padronizadas, usadas como target (y) do modelo SVM.
+AREAS_TI = [
+    "Front-end",
+    "Back-end",
+    "DevOps / Infraestrutura",
+    "Dados / Data Science",
+    "Inteligência Artificial",
+    "Segurança da Informação",
+]
+
 
 def conectar_banco():
     return sqlite3.connect("quiz.db")
+
 
 def criar_banco():
 
     banco = conectar_banco()
     cursor = banco.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS resultados (
+    colunas_q = ",\n            ".join(
+        f"q{n} INTEGER" for n in range(1, 11)
+    )
+
+    cursor.execute(f"""
+        CREATE TABLE IF NOT EXISTS respostas (
 
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario_id TEXT UNIQUE NOT NULL,
-            q1 TEXT,
-            q2 TEXT,
-            q3 TEXT,
-            q4 TEXT,
-            q5 TEXT,
-            q6 TEXT,
-            q7 TEXT,
-            q8 TEXT,
-            q9 TEXT,
-            q10 TEXT,
-            tempo_segundos INTEGER,
-            acertos INTEGER,
-            porcentagem REAL,
-            data_hora TEXT
+            id_usuario TEXT UNIQUE NOT NULL,
+            data_hora TEXT NOT NULL,
+            {colunas_q},
+            area_ti_atual TEXT
 
         )
     """)
@@ -164,120 +102,118 @@ def criar_banco():
     banco.close()
 
 
+def validar_respostas(form):
+    """Garante que as 10 afirmações foram respondidas com um valor
+    válido da escala Likert (1 a 5). Retorna (respostas, faltantes)."""
+
+    respostas = {}
+    faltantes = []
+
+    for afirmacao in AFIRMACOES:
+        numero = afirmacao["id"]
+        valor = form.get(f"q{numero}", "").strip()
+
+        if valor not in VALORES_LIKERT_VALIDOS:
+            faltantes.append(numero)
+        else:
+            respostas[numero] = int(valor)
+
+    return respostas, faltantes
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 @app.route("/quiz")
 def iniciar_quiz():
 
-    usuario_id = uuid.uuid4().hex[:8].upper()
+    usuario_id = str(uuid.uuid4())
 
     return render_template(
         "quiz.html",
-        perguntas=PERGUNTAS,
-        usuario_id=usuario_id
+        afirmacoes=AFIRMACOES,
+        escala=ESCALA_LIKERT,
+        areas=AREAS_TI,
+        usuario_id=usuario_id,
+        respostas_atual={},
+        area_atual="",
+        faltantes=[],
     )
+
 
 @app.route("/finalizar", methods=["POST"])
 def finalizar():
 
-    usuario_id = request.form["usuario_id"]
+    usuario_id = request.form.get("usuario_id") or str(uuid.uuid4())
+    area_ti_atual = request.form.get("area_ti_atual", "").strip()
 
-    tempo = int(request.form["tempo"])
+    if area_ti_atual not in AREAS_TI:
+        area_ti_atual = None
 
-    respostas = {}
+    respostas, faltantes = validar_respostas(request.form)
 
-    acertos = 0
+    if faltantes:
+        return render_template(
+            "quiz.html",
+            afirmacoes=AFIRMACOES,
+            escala=ESCALA_LIKERT,
+            areas=AREAS_TI,
+            usuario_id=usuario_id,
+            respostas_atual=respostas,
+            area_atual=area_ti_atual or "",
+            faltantes=faltantes,
+        ), 400
 
-    for pergunta in PERGUNTAS:
-
-        numero = pergunta["id"]
-
-        resposta = request.form.get(
-            f"q{numero}",
-            ""
-        )
-
-        respostas[numero] = resposta
-
-        if resposta == pergunta["resposta"]:
-
-            acertos += 1
-
-    total = len(PERGUNTAS)
-
-    porcentagem = (acertos / total) * 100
+    data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     banco = conectar_banco()
     cursor = banco.cursor()
 
-    cursor.execute("""
-        INSERT INTO resultados (
-            usuario_id,
-            q1,
-            q2,
-            q3,
-            q4,
-            q5,
-            q6,
-            q7,
-            q8,
-            q9,
-            q10,
-            tempo_segundos,
-            acertos,
-            porcentagem,
-            data_hora
-        )
+    colunas_q = ", ".join(f"q{n}" for n in range(1, 11))
+    marcadores_q = ", ".join("?" for _ in range(1, 11))
+    valores_q = [respostas[n] for n in range(1, 11)]
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
+    try:
+        cursor.execute(f"""
+            INSERT INTO respostas (
+                id_usuario,
+                data_hora,
+                {colunas_q},
+                area_ti_atual
+            )
+            VALUES (?, ?, {marcadores_q}, ?)
+        """, (usuario_id, data_hora, *valores_q, area_ti_atual))
 
-        usuario_id,
-
-        respostas[1],
-        respostas[2],
-        respostas[3],
-        respostas[4],
-        respostas[5],
-        respostas[6],
-        respostas[7],
-        respostas[8],
-        respostas[9],
-        respostas[10],
-
-        tempo,
-
-        acertos,
-
-        porcentagem,
-
-        datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-    ))
-
-
-    banco.commit()
-    banco.close()
+        banco.commit()
+    except sqlite3.IntegrityError:
+        # Reenvio do mesmo id_usuario (ex.: duplo clique / voltar página):
+        # não duplica o registro já salvo.
+        pass
+    finally:
+        banco.close()
 
     return render_template(
         "resultado.html",
         usuario_id=usuario_id,
-        acertos=acertos,
-        total=total,
-        porcentagem=porcentagem,
-        tempo=tempo
+        data_hora=data_hora,
+        afirmacoes=AFIRMACOES,
+        escala=dict(ESCALA_LIKERT),
+        respostas=respostas,
+        area_ti_atual=area_ti_atual,
     )
+
 
 @app.route("/relatorio")
 def relatorio():
 
     banco = conectar_banco()
 
+    colunas = ["id_usuario", "data_hora"] + [f"q{n}" for n in range(1, 11)] + ["area_ti_atual"]
+
     df = pd.read_sql_query(
-        "SELECT * FROM resultados",
+        f"SELECT {', '.join(colunas)} FROM respostas ORDER BY id",
         banco
     )
 
@@ -293,12 +229,10 @@ def relatorio():
         df.to_excel(
             writer,
             index=False,
-            sheet_name="Resultados"
+            sheet_name="Respostas"
         )
 
-
     arquivo.seek(0)
-
 
     return send_file(
 
@@ -313,6 +247,7 @@ def relatorio():
             "spreadsheetml.sheet"
         )
     )
+
 
 if __name__ == "__main__":
     criar_banco()
