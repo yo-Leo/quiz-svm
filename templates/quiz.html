@@ -6,7 +6,7 @@
 
     <meta charset="UTF-8">
 
-    <title>Quiz SVM</title>
+    <title>Questionário de Afinidade com Áreas de TI</title>
 
     <style>
 
@@ -27,22 +27,65 @@
         }
 
         .topo {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
+        }
+
+        .instrucao {
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        .erro {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            color: #b42318;
+            padding: 12px 16px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .erro.visivel {
+            display: block;
         }
 
         .pergunta {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             padding-bottom: 20px;
             border-bottom: 1px solid #ddd;
         }
 
+        .pergunta.pergunta-erro {
+            background: #fdecea;
+            border-radius: 5px;
+            padding: 15px;
+            border-bottom: none;
+        }
+
+        .pergunta h2 {
+            font-size: 17px;
+        }
+
+        .escala {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .opcao {
-            display: block;
-            padding: 10px;
-            margin: 8px 0;
+            flex: 1;
+            min-width: 110px;
+            text-align: center;
+            padding: 10px 6px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
             cursor: pointer;
+        }
+
+        .opcao input {
+            display: block;
+            margin: 0 auto 6px auto;
         }
 
         .finalizar {
@@ -54,10 +97,6 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-        }
-
-        #tempo {
-            font-weight: bold;
         }
 
     </style>
@@ -73,35 +112,28 @@
 
     <div class="topo">
 
-        <h1>Quiz SVM</h1>
-
-        <div>
-
-            Tempo:
-            <span id="tempo">
-                00:00
-            </span>
-
-        </div>
+        <h1>Questionário de Afinidade com Áreas de TI</h1>
 
     </div>
 
-
-    <p>
-
-        ID da tentativa:
-
-        <strong>
-            {{ usuario_id }}
-        </strong>
-
+    <p class="instrucao">
+        Para cada afirmação, indique o quanto você concorda ou discorda,
+        utilizando a escala de 1 a 5. Todas as afirmações são obrigatórias.
     </p>
+
+    <div id="erroValidacao" class="erro {% if faltantes %}visivel{% endif %}">
+        {% if faltantes %}
+            Responda todas as afirmações antes de continuar. Faltando:
+            {{ faltantes|join(', ') }}.
+        {% endif %}
+    </div>
 
 
     <form
         action="/finalizar"
         method="POST"
         id="quizForm"
+        novalidate
     >
 
 
@@ -113,44 +145,42 @@
             value="{{ usuario_id }}"
         >
 
-        <input
-            type="hidden"
-            name="tempo"
-            id="tempoInput"
-            value="0"
+        {% for afirmacao in afirmacoes %}
+
+        <div
+            class="pergunta {% if afirmacao.id in faltantes %}pergunta-erro{% endif %}"
+            data-pergunta-id="{{ afirmacao.id }}"
         >
-
-        {% for pergunta in perguntas %}
-
-        <div class="pergunta">
 
 
             <h2>
 
-                {{ pergunta.id }}.
-                {{ pergunta.pergunta }}
+                {{ afirmacao.id }}.
+                {{ afirmacao.texto }}
 
             </h2>
 
 
-            {% for letra, texto in pergunta.opcoes.items() %}
+            <div class="escala">
 
+                {% for valor, texto in escala %}
 
-            <label class="opcao">
+                <label class="opcao">
 
-                <input
-                    type="radio"
-                    name="q{{ pergunta.id }}"
-                    value="{{ letra }}"
-                    required
-                >
+                    <input
+                        type="radio"
+                        name="q{{ afirmacao.id }}"
+                        value="{{ valor }}"
+                        {% if respostas_atual.get(afirmacao.id) == valor %}checked{% endif %}
+                    >
 
-                {{ letra }}) {{ texto }}
+                    {{ texto }}
 
-            </label>
+                </label>
 
+                {% endfor %}
 
-            {% endfor %}
+            </div>
 
 
         </div>
@@ -163,7 +193,7 @@
             class="finalizar"
         >
 
-            Finalizar Quiz
+            Finalizar Questionário
 
         </button>
 
@@ -176,79 +206,48 @@
 
 <script>
 
-    let segundos = 0;
+    const formulario = document.getElementById("quizForm");
+    const erroBox = document.getElementById("erroValidacao");
+    const totalAfirmacoes = {{ afirmacoes|length }};
 
+    formulario.addEventListener("submit", function (evento) {
 
-    const tempo = document.getElementById(
-        "tempo"
-    );
+        const faltando = [];
 
+        document.querySelectorAll(".pergunta").forEach(function (div) {
 
-    const tempoInput = document.getElementById(
-        "tempoInput"
-    );
+            div.classList.remove("pergunta-erro");
 
-
-    const formulario = document.getElementById(
-        "quizForm"
-    );
-
-
-    // Cronômetro
-
-    const contador = setInterval(
-        function() {
-
-            segundos++;
-
-
-            let minutos = Math.floor(
-                segundos / 60
+            const id = div.getAttribute("data-pergunta-id");
+            const marcada = div.querySelector(
+                'input[name="q' + id + '"]:checked'
             );
 
+            if (!marcada) {
+                faltando.push(id);
+                div.classList.add("pergunta-erro");
+            }
 
-            let segundosRestantes =
-                segundos % 60;
+        });
 
+        if (faltando.length > 0) {
 
-            tempo.innerText =
+            evento.preventDefault();
 
-                String(minutos)
-                    .padStart(2, "0")
+            erroBox.textContent =
+                "Responda todas as afirmações antes de continuar. Faltando: "
+                + faltando.join(", ") + ".";
 
-                +
+            erroBox.classList.add("visivel");
 
-                ":"
-
-                +
-
-                String(segundosRestantes)
-                    .padStart(2, "0");
-
-
-            tempoInput.value =
-                segundos;
-
-
-        },
-
-        1000
-    );
-
-
-    // Antes de enviar
-
-    formulario.addEventListener(
-        "submit",
-        function() {
-
-            clearInterval(contador);
-
-            tempoInput.value =
-                segundos;
+            document.querySelector(".pergunta-erro").scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
 
         }
-    );
+
+    });
 
 </script>
 
